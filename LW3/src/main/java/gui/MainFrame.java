@@ -17,7 +17,7 @@ public class MainFrame extends JFrame {
     private final MonsterRepository repository = new MonsterRepository();
     private ParserHandler parserChain;
     private MonsterTree monsterTree;
-    private JButton exportButton;
+    //private JButton exportButton;
 
     public MainFrame() {
         setTitle("Monster Manager");
@@ -70,9 +70,6 @@ public class MainFrame extends JFrame {
                 } catch (Exception ex) {
                     JOptionPane.showMessageDialog(this, "Ошибка импорта: " + ex.getMessage());
                 }
-            }
-            if (imported) {
-                exportButton.setEnabled(!repository.getAllMonsters().isEmpty());
             }
         }
     }

@@ -1,3 +1,5 @@
+package org.mephi;
+
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
