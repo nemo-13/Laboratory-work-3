@@ -1,5 +1,6 @@
 package gui;
 
+import javax.swing.filechooser.FileNameExtensionFilter;
 import model.Monster;
 import parser.*;
 import repository.MonsterRepository;
@@ -9,11 +10,14 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 public class MainFrame extends JFrame {
     private final MonsterRepository repository = new MonsterRepository();
     private ParserHandler parserChain;
     private MonsterTree monsterTree;
+    private JButton exportButton;
 
     public MainFrame() {
         setTitle("Monster Manager");
@@ -38,6 +42,7 @@ public class MainFrame extends JFrame {
         JButton exportButton = new JButton("Экспорт");
         buttonPanel.add(importButton);
         buttonPanel.add(exportButton);
+        //exportButton.setEnabled(false);
 
         monsterTree = new MonsterTree(repository);
         JScrollPane treeScroll = new JScrollPane(monsterTree);
@@ -55,37 +60,47 @@ public class MainFrame extends JFrame {
         int result = fileChooser.showOpenDialog(this);
         
         if (result == JFileChooser.APPROVE_OPTION) {
+            boolean imported = false;
             for (File file : fileChooser.getSelectedFiles()) {
                 try {
                     List<Monster> monsters = parserChain.parse(file.getPath());
                     repository.addMonstersFromSource(file.getName(), monsters);
                     monsterTree.updateTree();
+                    imported = true;
                 } catch (Exception ex) {
                     JOptionPane.showMessageDialog(this, "Ошибка импорта: " + ex.getMessage());
                 }
+            }
+            if (imported) {
+                exportButton.setEnabled(!repository.getAllMonsters().isEmpty());
             }
         }
     }
 
     private void handleExport(ActionEvent e) {
+        if (repository.getAllMonsters().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Нет данных для экспорта");
+            return;
+        }
+
         JFileChooser fileChooser = new JFileChooser(FileUtils.getCurrentDirectory());
         fileChooser.setDialogTitle("Экспорт данных");
-        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 
-        fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
-                "JSON/XML/YAML файлы", "json", "xml", "yaml", "yml"
-        ));
+        fileChooser.addChoosableFileFilter(new FileNameExtensionFilter("JSON Files", "json"));
+        fileChooser.addChoosableFileFilter(new FileNameExtensionFilter("XML Files", "xml"));
+        fileChooser.addChoosableFileFilter(new FileNameExtensionFilter("YAML Files", "yaml", "yml"));
 
-        int result = fileChooser.showSaveDialog(this);
-        if (result == JFileChooser.APPROVE_OPTION) {
+        if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fileChooser.getSelectedFile();
-            String filePath = selectedFile.getPath();
-
             String format = "json";
-            if (filePath.endsWith(".xml")) {
-                format = "xml";
-            } else if (filePath.endsWith(".yaml") || filePath.endsWith(".yml")) {
-                format = "yaml";
+
+            FileNameExtensionFilter filter = (FileNameExtensionFilter) fileChooser.getFileFilter();
+            if (filter.getDescription().contains("XML")) format = "xml";
+            else if (filter.getDescription().contains("YAML")) format = "yaml";
+
+            String filePath = selectedFile.getPath();
+            if (!filePath.endsWith("." + format)) {
+                filePath += "." + format;
             }
 
             try {
